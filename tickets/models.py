@@ -50,9 +50,9 @@ class Role(models.Model):
 
 class AdminProfile(models.Model):
     ROLE_CHOICES = [
-        ('viewer', 'Viewer'),    
+        ('viewer', 'Viewer'),
         ('responder', 'Responder'),
-        ('manager', 'Manager'),   
+        ('manager', 'Manager'),
     ]
 
     user = models.OneToOneField(User, on_delete=models.CASCADE, limit_choices_to={'is_staff': True})

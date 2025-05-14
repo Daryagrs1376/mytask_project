@@ -24,7 +24,6 @@ class MessageViewSet(viewsets.ModelViewSet):
     serializer_class = MessageSerializer
     permission_classes = [permissions.IsAuthenticated]
 
-
     def get_queryset(self):
         user = self.request.user
         if user.is_staff:
@@ -33,8 +32,18 @@ class MessageViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         user = self.request.user
+
         if user.is_staff:
             role = user.adminprofile.role
             if role not in ['responder', 'manager']:
-                raise PermissionDenied("don't allow to send messages")
+                raise PermissionDenied("Don't allow answer messages")
         serializer.save(sender=user)
+
+    def destroy(self, request, *args, **kwargs):
+        user = request.user
+
+        if user.is_staff:
+            role = user.adminprofile.role
+            if role != 'manager':
+                raise PermissionDenied("Don't allow deleting messages")
+        return super().destroy(request, *args, **kwargs)
