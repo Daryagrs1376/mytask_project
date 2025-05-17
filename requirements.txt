@@ -1,1 +1,2 @@
-rest_framework,
+rest_framework, => pip install djangorestframework
+
