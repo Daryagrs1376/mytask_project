@@ -19,7 +19,7 @@ class Ticket(models.Model):
     created_at = models.DateTimeField(auto_now_add=True) #زمان ساخت تیکت #هنگام ساخت زمان بطور خودکار ثبت بشه
     updated_at = models.DateTimeField(auto_now=True) #auto now = هر بار تیکت ذخیره میشه این فیلد به روز بشه 
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='tickets') #کاربر سازنده تیکت #اگر کاربر حذف بشه تیکت هاشم حذف بشه
-    status = models.CharField(max_length=20, choices=[('open', 'Open'), ('closed', 'Closed')], default='open') 
+    status = models.CharField(max_length=20, choices=[('open', 'Open'), ('closed', 'Closed')], default='open') # علت استفادم از choice چون جلوی اشتباهات را میگیره چون خودم مقدار مشخص براش ثبت کردم 
 
     def __str__(self):
         return self.title 
@@ -32,14 +32,16 @@ class Message(models.Model):
     content = models.TextField() # متن پیام 
     created_at = models.DateTimeField(auto_now_add=True) # زمان ارسال پیام # زمان  بروز رسانی پیام
     attachment = models.FileField(upload_to='attachments/', null=True, blank=True) # برای ذخیره فایل ها 10 گیگ
-    parent = models.ForeignKey('self', null=True, blank=True, related_name='replies', on_delete=models.CASCADE)  #برای قابل رپلای شدن پیام
+    parent = models.ForeignKey('self', null=True, blank=True, related_name='replies', on_delete=models.CASCADE)  # برای اضافه کردن قابلیت رپلای پیام
+    # از CASCADE استفاده کردم که وقتی کاربر حذف شد تیکت هاشم پاک بشه ولی طبق داکیومنت اگر کامنت ها را بخوام نگهدارم از set-null استفاده میکنم 
 
 
     def __str__(self):
         return f"Message from {self.sender.username} for {self.ticket.title}"
                                     #نمایش پیام: فرستنده + عنوان تیکت 
 
-# نقش کاربر در سازمان
+
+# نقش کاربر در سازمان/ برای نقش های عمومی / کاربران غیر ادمین 
 class Role(models.Model):
     name = models.CharField(max_length=100, choices=[
         ('viewer', 'Viewer'), # بیننده 
@@ -54,6 +56,7 @@ class Role(models.Model):
         return self.name # میخوام نام نقش داخل ادمین نمایش بدم
 
 
+# کاربرانی هستن که نقش مهم در سازمان دارن / کاربران دارای پروفایل در سازمان 
 class AdminProfile(models.Model):
     ROLE_CHOICES = [
         ('viewer', 'Viewer'),
