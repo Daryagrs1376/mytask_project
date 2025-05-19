@@ -3,19 +3,6 @@ from .models import Organization, Ticket, Message, Role, AdminProfile, AdminProf
 
 
 
-# @admin.register(Organization)
-# class OrganizationAdmin(admin.ModelAdmin):
-#     list_display = ('name',)
-#     filter_horizontal = ('users',)
-
-
-# @admin.register(AdminProfile)
-# class AdminProfileAdmin(admin.ModelAdmin):
-#     list_display = ('user', 'organization', 'role')
-#     list_filter = ('organization', 'role')
-#     search_fields = ('user__username',)
-
-
 @admin.register(Organization)
 class OrganizationAdmin(admin.ModelAdmin):
     list_display = ('name',)

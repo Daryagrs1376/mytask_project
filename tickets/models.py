@@ -47,10 +47,11 @@ class Role(models.Model):
         ('manager', 'Manager')
     ]) # نقش ها یکی از این 3 مقدار باشه 
     organization = models.ForeignKey(Organization, on_delete=models.CASCADE) # نقش سازمان اگر سازمان حذف بشه نقش هم حذف بشه
-    users = models.ManyToManyField(User) # کاربرانی که این نقش را دارن
+    users = models.ManyToManyField(User) # ارتباط چند به چند بین کاربران و نقش‌ها
+# اینجا میخوام بگم که یک کاربر میتونه چند نقش داشته باشه و یک نقش هم میتونه چندکاربر داشته باشه
     
     def __str__(self):
-        return self.name
+        return self.name # میخوام نام نقش داخل ادمین نمایش بدم
 
 
 class AdminProfile(models.Model):

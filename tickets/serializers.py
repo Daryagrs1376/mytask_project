@@ -25,6 +25,7 @@ class MessageSerializer(serializers.ModelSerializer): # از مدل سریالا
                 raise serializers.ValidationError("حجم فایل  تا سقف 10 مگابایت")
         return value
     
+
 # متد رپلای پیام
     def get_replies(self, obj):
 
