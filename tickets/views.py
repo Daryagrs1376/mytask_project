@@ -27,14 +27,17 @@ class TicketViewSet(viewsets.ModelViewSet):
 
 class MessageViewSet(viewsets.ModelViewSet):
     serializer_class = MessageSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated] # پرمیشن برای اینه که فقط کاربرانی که لاگین کردن به این ویو دسترسی دارن
+    # اینجا میخوام بگم اگر کاربر ادمین بود همه پیام ها را ببینه و اگر عادی بود فقط پیام های خودش را ببینه
 
     def get_queryset(self):
-        user = self.request.user
+        user = self.request.user # با ریکوست دادن اطلاعات یوزر را میگیرم
+        # اگر کاربر ادمین بود همه پیام ها برگرده
         if user.is_staff:
             return Message.objects.all()
-        return Message.objects.filter(sender=user)
+        return Message.objects.filter(sender=user) # اگر کاربر عادی باشه فقط پیام های خودش برگرده و بقیه اطلاعات را نتونه ببینه 
 
+    # هنگام post اطلاعات کاربر لاگین شده را بگیریم
     def perform_create(self, serializer):
         user = self.request.user
 
@@ -52,5 +55,11 @@ class MessageViewSet(viewsets.ModelViewSet):
             role = user.adminprofile.role
             if role != 'manager':
                 raise PermissionDenied("Don't allow deleting messages")
-        return super().destroy(request, *args, **kwargs)
-        
+            
+        else:
+            Message = self.get_object()
+            if Message.sender != user:
+                raise PermissionDenied("You  don't have permission to delete this message") 
+                
+        return super().destroy(request, *args, **kwargs) # اگر کاربر استف نباشه پیامش حذف میشه
+  
