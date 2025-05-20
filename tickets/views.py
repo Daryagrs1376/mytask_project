@@ -2,6 +2,7 @@ from rest_framework import viewsets, permissions # پرمیشن برای این�
 from .models import Ticket, Message
 from .serializers import TicketSerializer, MessageSerializer #سریالایزرهایی که به مدلها وصل میشن
 from rest_framework.exceptions import PermissionDenied #برای خطای پرمیشن  یعنی اگر کاربر دسترسی نداشت خطا بده
+from django.shortcuts import get_object_or_404
 
 
 
@@ -49,16 +50,19 @@ class MessageViewSet(viewsets.ModelViewSet):
 
 # از این متد استفاده کردم که ویوست سفارشی را قبل از حذف کردن بررسی کنیم که کاربر مجاز به حذف هست یا ن
     def destroy(self, request, *args, **kwargs): # destroyبرای حذف استفاده میشه / selfاز این متد به بقیه متدها دسترسی داریم/  requestشامل تمام اطلاعات http/ *argsیک سینتکس  پایتونیه 
-        user = request.user 
+        user = request.user # اینجا یوزر لاگین شده را میبینم که اجازه حذف داره یا ن
+        Message = get_object_or_404(Message, pk=kwargs["pk"]) # با این متد میخوام پیام را بگیرم اگر وجود نداشت خطا بده
 
-        if user.is_staff:
+
+        if user.is_staff: # کاربر ادمین هست
+            # اگر کاربر ادمین بود و نقشش مدیر بود اجازه حذف پیام داره
             role = user.adminprofile.role
-            if role != 'manager':
-                raise PermissionDenied("Don't allow deleting messages")
+            if role != 'manager': # فقط مدیر 
+                raise PermissionDenied("You don't have permission to delete messages.")
             
-        else:
-            Message = self.get_object()
-            if Message.sender != user:
+        else: # اگر کاربر عادی بود
+                                        
+            if Message.sender != user: # اگر پیام برای خودش بود حذف کنه
                 raise PermissionDenied("You  don't have permission to delete this message") 
                 
         return super().destroy(request, *args, **kwargs) # اگر کاربر استف نباشه پیامش حذف میشه
