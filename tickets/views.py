@@ -12,8 +12,7 @@ class TicketViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated] # فقط کاربرانی که لاگین کردن به این ویو دسترسی دارن
 
 
-    def get_queryset(self): # در کلاس های مدل ویو ست داخل جنگو این متد مشخص میکنه که چه داده هایی را برمیگردونه
-        # اگر کاربر ادمین بود همه تیکت ها برگرده اگر  ادمین نبود فقط تیکت های خودش برگرده
+    def get_queryset(self): 
         user = self.request.user
         if user.is_staff:
         
@@ -29,41 +28,46 @@ class TicketViewSet(viewsets.ModelViewSet):
 class MessageViewSet(viewsets.ModelViewSet):
     serializer_class = MessageSerializer
     permission_classes = [permissions.IsAuthenticated] # پرمیشن برای اینه که فقط کاربرانی که لاگین کردن به این ویو دسترسی دارن
-    # اینجا میخوام بگم اگر کاربر ادمین بود همه پیام ها را ببینه و اگر عادی بود فقط پیام های خودش را ببینه
+
+
+    
+    # اگر کاربر عادی باشه فقط پیام های خودش برگرده و بقیه اطلاعات را نتونه ببینه 
 
     def get_queryset(self):
-        user = self.request.user # با ریکوست دادن اطلاعات یوزر را میگیرم
-        # اگر کاربر ادمین بود همه پیام ها برگرده
+        user = self.request.user 
         if user.is_staff:
             return Message.objects.all()
-        return Message.objects.filter(sender=user) # اگر کاربر عادی باشه فقط پیام های خودش برگرده و بقیه اطلاعات را نتونه ببینه 
+        return Message.objects.filter(sender=user) 
 
-    # هنگام post اطلاعات کاربر لاگین شده را بگیریم
+
+    # برای اینکه پاسخ بده و ببینه
+
     def perform_create(self, serializer):
         user = self.request.user
+        if user.is_staff and getattr(getattr(user, 'adminprofile', None), 'role', None) == 'responder':
+            raise PermissionDenied("Responder can only reply to tickets.") 
+        serializer.save(sender=user)    
 
-        if user.is_staff:
-            role = user.adminprofile.role
-            if role not in ['responder', 'manager']:
-                raise PermissionDenied("Don't allow answer messages")
-        serializer.save(sender=user)
-
-# از این متد استفاده کردم که ویوست سفارشی را قبل از حذف کردن بررسی کنیم که کاربر مجاز به حذف هست یا ن
-    def destroy(self, request, *args, **kwargs): # destroyبرای حذف استفاده میشه / selfاز این متد به بقیه متدها دسترسی داریم/  requestشامل تمام اطلاعات http/ *argsیک سینتکس  پایتونیه 
-        user = request.user # اینجا یوزر لاگین شده را میبینم که اجازه حذف داره یا ن
-        Message = get_object_or_404(Message, pk=kwargs["pk"]) # با این متد میخوام پیام را بگیرم اگر وجود نداشت خطا بده
-
-
-        if user.is_staff: # کاربر ادمین هست
-            # اگر کاربر ادمین بود و نقشش مدیر بود اجازه حذف پیام داره
-            role = user.adminprofile.role
-            if role != 'manager': # فقط مدیر 
-                raise PermissionDenied("You don't have permission to delete messages.")
             
-        else: # اگر کاربر عادی بود
-                                        
-            if Message.sender != user: # اگر پیام برای خودش بود حذف کنه
-                raise PermissionDenied("You  don't have permission to delete this message") 
-                
-        return super().destroy(request, *args, **kwargs) # اگر کاربر استف نباشه پیامش حذف میشه
-  
+
+
+    def destroy(self, request, *args, **kwargs):
+        user = request.user
+
+        if user.is_staff and user.adminprofile.role == 'manager':
+            instance = self.get_object()
+            self.perform_destroy(instance)
+            return Response (status=status.HTTP_204_NO_CONTENT)
+    
+
+
+
+        
+        
+    # def perform_create(self, serializer):
+    #     role = getattr(getattr(self.request.user, 'adminprofile', None), 'role', None)
+    #     user = self.request.user 
+
+    #     if user.is_staff and role == 'responder': 
+    #         if not serializer.validated_data.get("parent"):
+    #             raise PermissionDenied("Responder allowed to answer only.")
