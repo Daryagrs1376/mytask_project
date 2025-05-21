@@ -43,3 +43,13 @@ class TicketSerializer(serializers.ModelSerializer):
     class Meta:
         model = Ticket
         fields = ['id', 'title', 'description', 'created_at', 'status', 'user', 'messages'] #فیلدهای خروجی json
+
+
+class SendOTPSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+
+
+
+class VerifyOTPSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+    code = serializers.CharField(max_length=6)

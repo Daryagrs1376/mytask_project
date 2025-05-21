@@ -71,3 +71,25 @@ class AdminProfile(models.Model):
     
     def __str__(self):
         return f"{self.user.username} ({self.role})" # نمایش نام ادمین و نقش ادمین
+
+
+
+class EmailOTP(models.Model):
+    email = models.EmailField(unique=True)
+    code = models.CharField(max_length=5)
+    created_at = models.DateTimeField(auto_now_add=True)
+    is_verified = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f"{self.email} - {self.code}"
+    
+
+
+class UserProfile(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    full_name = models.CharField(max_length=100, blank=True)
+    phone = models.CharField(max_length=20, blank=True)
+    profile_image = models.ImageField(upload_to='profiles/', blank=True, null=True)
+
+    def __str__(self):
+        return self.user.email

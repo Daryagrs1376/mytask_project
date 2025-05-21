@@ -1,9 +1,16 @@
-from rest_framework import viewsets, permissions # پرمیشن برای اینکه بدونم چه کسی به ویوست دسترسی داره
-from .models import Ticket, Message
-from .serializers import TicketSerializer, MessageSerializer #سریالایزرهایی که به مدلها وصل میشن
-from rest_framework.exceptions import PermissionDenied #برای خطای پرمیشن  یعنی اگر کاربر دسترسی نداشت خطا بده
+from rest_framework import viewsets, permissions, status # پرمیشن برای اینکه بدونم چه کسی به ویوست دسترسی داره
+from .models import Ticket, Message, EmailOTP
+from .serializers import TicketSerializer, MessageSerializer, SendOTPSerializer #سریالایزرهایی که به مدلها وصل میشن
+from rest_framework.exceptions import PermissionDenied
 from django.shortcuts import get_object_or_404
-
+from django.utils import timezone
+import random
+from rest_framework.response import Response
+from rest_framework.views import APIView
+from django.contrib.auth.models import User
+from rest_framework.authtoken.models import Token
+from django.utils.timezone import now
+from .models import UserProfile
 
 
 
@@ -60,14 +67,61 @@ class MessageViewSet(viewsets.ModelViewSet):
             return Response (status=status.HTTP_204_NO_CONTENT)
     
 
+class SendOTPView(APIView):
+    def post(self, request):
+        serializer = SendOTPSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+        email = serializer.validated_data['email']
+        code = str(random.randint(100000, 999999))
 
+        EmailOTP.objects.update_or_create(
+            email=email,
+            defaults={
+                'code': code,
+                'created_at': timezone.now(),
+                'is_verified': False
+            }
+        )
+
+        print(f"کد OTP برای {email}: {code}")  
+
+        return Response({'message': 'کد OTP ارسال شد'}, status=status.HTTP_200_OK)
+    
+
+class VerifyOTPView(APIView):
+    def post (self, request):
+        email, code = request.data.get('email'), request.data.get('code')
+        if not all([email, code]):
+            return Response({'error': 'ایمیل و کد را وارد کنید'}, status=400)
         
+        otp = EmailOTP.objects.filter(email=email, code=code).first()
+        if not otp or  (now() - otp.created_at).total_seconds() > 300:
+            return Response({'error': 'کد نادرست است یا منقضی شده'}, status=400)
         
-    # def perform_create(self, serializer):
-    #     role = getattr(getattr(self.request.user, 'adminprofile', None), 'role', None)
-    #     user = self.request.user 
+        otp.is_verified = True
+        otp.save()
 
-    #     if user.is_staff and role == 'responder': 
-    #         if not serializer.validated_data.get("parent"):
-    #             raise PermissionDenied("Responder allowed to answer only.")
+        user, _ = User.objects.get_or_create(username=email, defaults={'email': email})
+        token, _ = Token.objects.get_or_create(user=user)
+
+        return Response({'message': 'ورود موفق', 'token': token.key})
+    
+
+
+class OTPVerifyView(APIView):
+    def post(self, request):
+        email = request.data.get('email')
+        otp = request.data.get('otp')
+
+        # فرض: OTP را از مدل ذخیره کرده‌ایم و حالا بررسی می‌کنیم
+        if otp == "1234":  # برای تست، فرض کردیم otp صحیحه
+            user, created = User.objects.get_or_create(username=email, email=email)
+
+            # اگر کاربر تازه ساخته شده، پروفایل هم بساز
+            if created:
+                UserProfile.objects.create(user=user)
+
+            return Response({"message": "Login successful"}, status=status.HTTP_200_OK)
+        return Response({"error": "Invalid OTP"}, status=status.HTTP_400_BAD_REQUEST)
