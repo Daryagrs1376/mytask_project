@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Ticket, Message # مدل تیکت و مسج از فایل مدل ها ایمپورت میشه
+from .models import Ticket, Message, Profile # مدل تیکت و مسج از فایل مدل ها ایمپورت میشه
 
 
 
@@ -43,3 +43,9 @@ class TicketSerializer(serializers.ModelSerializer):
     class Meta:
         model = Ticket
         fields = ['id', 'title', 'description', 'created_at', 'status', 'user', 'messages'] #فیلدهای خروجی json
+
+
+class ProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Profile
+        fields = ['full_name', 'phone', 'image']

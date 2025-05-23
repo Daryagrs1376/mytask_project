@@ -1,6 +1,6 @@
-from django.db import models # مدلهای جدول پایگاه داده 
-from django.contrib.auth.models import User # مدل پیش فرض کاربر یوزر
-
+from django.db import models 
+from django.contrib.auth.models import User 
+import random
 
 
 #مدل سازمان
@@ -62,7 +62,7 @@ class AdminProfile(models.Model):
         ('viewer', 'Viewer'),
         ('responder', 'Responder'),
         ('manager', 'Manager'),
-    ] # تعریف نقش برای ادمین
+    ] 
 
     user = models.OneToOneField(User, on_delete=models.CASCADE, limit_choices_to={'is_staff': True}) # رابطه یک به یک با کاربرانی که ادمین هستن #لیمیتد چویس برای محدود کردن انتخاب ادمینها
     organization = models.ForeignKey(Organization, on_delete=models.CASCADE) # مشخص کردن ادمین برای کدام سازمان است
@@ -71,3 +71,25 @@ class AdminProfile(models.Model):
     
     def __str__(self):
         return f"{self.user.username} ({self.role})" # نمایش نام ادمین و نقش ادمین
+
+
+
+class OTP(models.Model):
+    email = models.EmailField()
+    code = models.CharField(max_length=6)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def save(self, *args, **kwargs):
+        if not self.code: 
+            self.code = str(random.randint(100000, 999999))
+        super().save(*args, **kwargs)
+
+
+class Profile(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    full_name = models.CharField(max_length=100, blank=True)
+    phone = models.CharField(max_length=15, blank=True)
+    image = models.ImageField(upload_to='profiles/', null=True, blank=True)
+
+    def __str__(self):
+        return self.user.username
