@@ -11,7 +11,6 @@ from .views import (
 )
 
 
-
 router = DefaultRouter()
 router.register(r'tickets', TicketViewSet, basename='ticket')
 router.register(r'messages', MessageViewSet, basename='message') 
